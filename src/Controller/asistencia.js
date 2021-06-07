@@ -1,5 +1,5 @@
-const Alumnos = require('../Models/Alumnos');
-const Aulas = require('../Models/Eventos');
+const Usuarios = require('../Models/Usuarios');
+const Eventos = require('../Models/Eventos');
 const io = require("socket.io-client");
 const config = require('../appConfig');
 const jwt = require('jsonwebtoken');
@@ -18,13 +18,13 @@ exports.asistenciaAlumno = async function(req, res, next){
     const {NameAlumno, LastNameAlumno, NameEvent, Localizacion} = req.body;
     let DateAsistencia =  new Date();
 
-    let aulaCheck = new Aulas();
-    aulaCheck = await Aulas.findOne({
+    let aulaCheck = new Eventos();
+    aulaCheck = await Eventos.findOne({
         _id:EventoId
     });
    
-    let alumnoCheck = new Alumnos();
-    alumnoCheck = await Alumnos.findOne({
+    let usuariosCheck = new Usuarios();
+    usuariosCheck = await Usuarios.findOne({
         Name: NameAlumno,
         LastName: LastNameAlumno
     });
@@ -61,7 +61,7 @@ exports.asistenciaAlumno = async function(req, res, next){
 
     if(mensaje == ""){
         if(flagPrimerDato == 1){
-            await Aulas.findOneAndUpdate(
+            await Eventos.findOneAndUpdate(
                 {
                     _id:EventoId
                 },
@@ -84,7 +84,7 @@ exports.asistenciaAlumno = async function(req, res, next){
                 DateAsistencia:DateAsistencia
             });
 
-            await Aulas.findOneAndUpdate(
+            await Eventos.findOneAndUpdate(
                 {
                     _id:EventoId
                 },
@@ -110,54 +110,50 @@ exports.asistenciaAlumno = async function(req, res, next){
     res.status(200).json({Mensaje: mensaje});
 };
 
-exports.validacionAlumnoYAula = async function(req, res, next){
-    let {NameAlumno, LastNameAlumno} = req.body;
+exports.validacionEvento = async function(req, res, next){
     let EventoId = req.params.id;
-    
-    let alumno = new Alumnos();
-    let aula = new Aulas();
-
+    let aula;
     let mensaje = "";
 
-    alumno = await Alumnos.findOne({
-        Name: NameAlumno,
-        LastName: LastNameAlumno
-    });
-
-    aula = await Aulas.findOne({
-        _id: EventoId
-    });
-
-    if(alumno == null){
-        mensaje = "Alumno no registrado";
-    }
-
-    if(aula == null){
-        if(mensaje == ""){
-            mensaje = "Aula no encontrada"
-        }
-        else{
-            mensaje = mensaje + " y Aula no encontrada";
-        }
-    }
-
-    if(mensaje == ""){
+    try{
+        aula = await Eventos.findOne({
+            _id: EventoId
+        });
         next();
-    }
-    else{
-        res.send(mensaje);
+    } 
+    catch(error){
+        mensaje = "Evento no encontrado";
+        
+        res.status(400).json({Mensaje: mensaje});
     }
 };
 
-exports.authUser = function(req, res, next){
+exports.authUser = async function(req, res, next){
     const token = req.header('Usuario-Token');
     if(typeof token !== 'undefined'){
-        jwt.verify(token, config.secret, function(err, data){
+        jwt.verify(token, config.secret, async function(err, data){
             if(err){
                 res.status(400).json({Mensaje:"Token Exirado"});
             }
             else{
-                next();
+                let alumnoJWT;
+                alumnoJWT = await Usuarios.findOne({
+                    Name: data.user.Name,
+                    LastName: data.user.LastName
+                });
+
+                let alumno;
+                alumno = await Usuarios.findOne({
+                    Name: req.body.NameAlumno,
+                    LastName: req.body.LastNameAlumno
+                });
+
+                if(alumno != null && alumnoJWT != null){
+                    next();
+                }
+                else{
+                    res.status(400).json({Mensaje:"Datos del Alumno incorrectos"});
+                }
             }
         });
     }

@@ -37,6 +37,18 @@ exports.postEventos = async function(req, res, next){
     }
 };
 
+exports.getQRPagina = async function(req, res, next){
+    try {
+        const QR = await qrcode.toDataURL(req.body.URL,{
+            errorCorrectionLevel: 'H',
+            width : "250"
+        });
+        res.status(200).json({QR});
+    } catch (error) {
+        res.status(400).json({Mensaje:error});
+    } 
+};
+
 exports.getAllEventos = async function(req, res, next){
     let MaestroId = req.params.id;
 
@@ -48,7 +60,6 @@ exports.getAllEventos = async function(req, res, next){
 exports.putEventos = async function(req, res, next){
     let id = req.params.id;
     const {NameEvent, TiempoInicio, TiempoExpiracion, Localizacion} = req.body;
-
     let eventoDomain = new Evento();
     eventoDomain = await Evento.findOneAndUpdate(
         {_id: id},
@@ -81,13 +92,7 @@ exports.getAsistenciaEvento = async function(req, res, next){
     let eventoDomain = new Evento();
     eventoDomain = await Evento.find({_id:id});
     if(eventoDomain.length != 0){
-        // console.log(eventoDomain.Asistencia);
-        // if(typeof eventoDomain.Asistencia !== 'undefined'){
-            res.status(200).json(eventoDomain);
-        // }
-        // else{
-        //     res.status(200).json([]);
-        // }
+        res.status(200).json(eventoDomain);
     }
     else{
         res.status(400).json({Mensaje:"Id invalido"});

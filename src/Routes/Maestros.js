@@ -4,6 +4,8 @@ const ControllerMaestro = require('../Controller/maestro');
 
 route.post('/generarEventos', ControllerMaestro.authUser, ControllerMaestro.postEventos);
 
+route.post('/getQRPagina', ControllerMaestro.getQRPagina);
+
 route.get('/obtenerEventos/:id', ControllerMaestro.authUser, ControllerMaestro.getAllEventos);
 
 route.put('/actualizarEvento/:id', ControllerMaestro.authUser, ControllerMaestro.putEventos);
