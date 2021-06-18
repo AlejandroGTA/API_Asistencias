@@ -29,6 +29,22 @@ exports.putUsuario = async function(req, res, next){
     }
 };
 
+exports.deleteUsuario = async function(req, res, next){
+    let usaurioId = req.params.id;
+    let mensaje = "";
+    try{
+        await Usuarios.findOneAndDelete({
+            _id:usaurioId
+        });
+        mensaje = "Eliminado";
+        res.status(200).json({Mensaje:mensaje});
+    }
+    catch{
+        mensaje = "No se completo la eliminación";
+        res.status(400).json({Mensaje:mensaje});
+    }
+}
+
 exports.authUser = function(req, res, next){
     const token = req.header('Usuario-Token'); 
     if(typeof token !== 'undefined'){
