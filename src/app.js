@@ -14,10 +14,36 @@ const io = require('socket.io')(server,{
         credentials: true
       }
 });
+const swaggerJsDoc = require('swagger-jsdoc');
+const swaggerUi = require('swagger-ui-express');
 
 const config = require('./appConfig');
 
 require('./DataBase/Conexion');
+
+//Extended: https://swagger.io/specification/#infoObject
+const swaggerOptions = {
+    definition: {
+        openapi: "3.0.0",
+        info:{
+            title: "Asistencia API",
+            version: "1.0.0",
+            description: "API Para el conteo de asistencias por medio de QR",
+        },
+        servers: [
+            {
+                url: "http://127.0.0.1:3000",
+            },
+            {
+                url: config.API_URL
+            },
+        ],
+    },
+    apis: ["./src/Routes/*.js"],
+};
+
+const swaggerDocs = swaggerJsDoc(swaggerOptions);
+app.use('/api_docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 
 app.use('/Public',express.static(path.join(__dirname,'Public')));
 app.use(cors());
@@ -33,7 +59,7 @@ app.use('/', require('./Routes/Home'));
 app.use('/Maestro', require('./Routes/Maestros'));
 app.use('/Asistencia', require('./Routes/Asistencia'));
 app.use('/Admin', require('./Routes/Admin'));
- 
+
 io.on('connection', (socket) => {
     console.log('a user connected');
     
@@ -47,6 +73,6 @@ io.on('connection', (socket) => {
 });
 
 const port = process.env.PORT || 3000;
-app.listen(port, '0.0.0.0', function(){
+server.listen(port, '0.0.0.0', function(){
     console.log("Server ON: " + port);
 });

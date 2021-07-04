@@ -3,9 +3,13 @@ const config = require('../appConfig');
 const jwt = require('jsonwebtoken');
 
 exports.getAllUsers = async function(req, res, next){
-    let usuarios = await Usuarios.find({},{Password:0, Email:0});
+    try {
+        let usuarios = await Usuarios.find({},{Password:0, Email:0});
 
-    res.status(200).json(usuarios);
+        res.status(200).json(usuarios);
+    } catch (error) {
+        res.status(400).json({mensaje:"No se encontro usuarios"});        
+    }
 };
 
 exports.putUsuario = async function(req, res, next){
@@ -45,15 +49,28 @@ exports.deleteUsuario = async function(req, res, next){
     }
 }
 
-exports.authUser = function(req, res, next){
+exports.authUser =  function(req, res, next){
     const token = req.header('Usuario-Token'); 
     if(typeof token !== 'undefined'){
-        jwt.verify(token, config.secret, function(err, data){
+        jwt.verify(token, config.secret, async function(err, data){
             if(err){
                 res.status(400).json({Mensaje:"Token Exirado"});
             }
             else{
-                next();
+                let user;
+                try {
+                    user = await Usuarios.findOne({_id:data.user.id});
+                    
+                } catch (error) {
+                    res.status(400).json({mensjae:"Id invalido"});
+                }
+
+                if(user.TypeUser == "Admin"){
+                    next();
+                }
+                else{
+                    res.status(400).json({mensaje:"Accion Invalida"});
+                }
             }
         });
     }

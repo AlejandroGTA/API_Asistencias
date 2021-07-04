@@ -1,4 +1,4 @@
-const Maestro = require('../Models/Maestros');
+const Usuarios = require('../Models/Usuarios');
 const Evento = require('../Models/Eventos');
 const jwt = require('jsonwebtoken');
 const qrcode = require("qrcode");
@@ -45,33 +45,40 @@ exports.getQRPagina = async function(req, res, next){
         });
         res.status(200).json({QR});
     } catch (error) {
-        res.status(400).json({Mensaje:error});
+        res.status(400).json({Mensaje:"Error al generar codigo"});
     } 
 };
 
 exports.getAllEventos = async function(req, res, next){
     let MaestroId = req.params.id;
-
-    let eventos = await Evento.find({MaestroId});
-
-    res.status(200).json(eventos);
+    
+    try {
+        let eventos = await Evento.find({MaestroId});
+        res.status(200).json(eventos);
+    } catch (error) {
+        res.status(400).json({Mensaje:"No se encontro eventos con el ID proporcionado"});
+    }
 };
 
 exports.putEventos = async function(req, res, next){
     let id = req.params.id;
     const {NameEvent, TiempoInicio, TiempoExpiracion, Localizacion} = req.body;
-    let eventoDomain = new Evento();
-    eventoDomain = await Evento.findOneAndUpdate(
-        {_id: id},
-        {
-            NameEvent: NameEvent,
-            TiempoInicio: new Date(TiempoInicio),
-            TiempoExpiracion: new Date(TiempoExpiracion),
-            Localizacion
-        }
-    );
-
-    res.status(200).json({Mensaje:"Success"});
+    try {
+        let eventoDomain = new Evento();
+        eventoDomain = await Evento.findOneAndUpdate(
+            {_id: id},
+            {
+                NameEvent: NameEvent,
+                TiempoInicio: new Date(TiempoInicio),
+                TiempoExpiracion: new Date(TiempoExpiracion),
+                Localizacion
+            }
+        );
+    
+        res.status(200).json({Mensaje:"Success"});
+    } catch (error) {
+        res.status(400).json({Mensaje:"Hubo un error"});
+    }
 };
 
 exports.deleteEvento = async function(req, res, next){
@@ -102,12 +109,25 @@ exports.getAsistenciaEvento = async function(req, res, next){
 exports.authUser = function(req, res, next){
     const token = req.header('Usuario-Token'); 
     if(typeof token !== 'undefined'){
-        jwt.verify(token, config.secret, function(err, data){
+        jwt.verify(token, config.secret, async function(err, data){
             if(err){
                 res.status(400).json({Mensaje:"Token Exirado"});
             }
             else{
-                next();
+                let user;
+                try {
+                    user = await Usuarios.findOne({_id:data.user.id});
+                    
+                } catch (error) {
+                    res.status(400).json({mensjae:"Id invalido"});
+                }
+
+                if(user.TypeUser == "Maestro"){
+                    next();
+                }
+                else{
+                    res.status(400).json({mensaje:"Accion Invalida"});
+                }
             }
         });
     }
